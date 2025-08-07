@@ -81,12 +81,40 @@
                 z-index: 40;
             }
         }
+        /* Add for mobile add-task bar animation */
+        .mobile-add-task-bar {
+            transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+            transform: translateY(100%);
+        }
+        .mobile-add-task-bar.open {
+            transform: translateY(0);
+        }
+        @media (min-width: 768px) {
+            .mobile-add-task-bar, .mobile-add-task-toggle {
+                display: none !important;
+            }
+        }
+        @media (max-width: 767px) {
+            .desktop-add-task-bar {
+                display: none !important;
+            }
+        }
+        /* Hamburger overlay for mobile sidebar */
+        .mobile-sidebar-header {
+            position: relative;
+        }
+        .mobile-sidebar-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 60;
+        }
     </style>
 </head>
 <body class="light theme-transition" style="background-color: var(--bg-primary); color: var(--text-primary);">
     <!-- Mobile Header -->
     <div class="md:hidden flex items-center justify-between p-4" style="background-color: var(--bg-secondary); border-bottom: 1px solid var(--border);">
-        <button id="mobileMenuBtn" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">
+        <button id="mobileMenuBtn" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition z-50">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
@@ -105,6 +133,14 @@
     <div class="flex h-screen">
         <!-- Sidebar -->
         <div id="sidebar" class="slide-in md:translate-x-0 fixed md:relative z-50 w-80 md:w-64 h-full theme-transition" style="background-color: var(--bg-secondary); border-right: 1px solid var(--border);">
+            <!-- Mobile Sidebar Header (hamburger/close) -->
+            <div class="md:hidden mobile-sidebar-header">
+                <button id="mobileSidebarCloseBtn" class="mobile-sidebar-close hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
             <div class="pt-6 pb-6 px-0">
                 <div class="flex items-center justify-between mb-8 px-6">
                     <h1 class="text-2xl font-bold text-blue-600">งานของฉัน</h1>
@@ -167,15 +203,51 @@
                 </div>
             </div>
 
-            <!-- Add Task Input (Fixed at bottom on mobile) -->
-            <div class="mobile-input p-4 theme-transition" style="background-color: var(--bg-secondary); border-top: 1px solid var(--border);">
+            <!-- Mobile Add Task Toggle Button -->
+            <button id="mobileAddTaskToggle" class="mobile-add-task-toggle fixed bottom-4 right-4 z-50 bg-blue-600 text-white rounded-full shadow-lg p-4 flex items-center justify-center md:hidden" aria-label="เพิ่มงานใหม่">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                </svg>
+            </button>
+            <!-- Mobile Add Task Bar -->
+            <div id="mobileAddTaskBar" class="mobile-add-task-bar fixed left-0 right-0 bottom-0 z-50 theme-transition" style="background-color: var(--bg-secondary); border-top: 1px solid var(--border);">
+                <div class="max-w-4xl mx-auto p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-lg">เพิ่มงานใหม่</span>
+                        <button id="closeMobileAddTaskBar" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <input type="text" id="taskTitleInputMobile" placeholder="เพิ่มงานใหม่..." class="w-full px-4 py-3 rounded-lg border theme-transition" style="background-color: var(--bg-card); border-color: var(--border); color: var(--text-primary);">
+                            <textarea id="taskDescInputMobile" placeholder="คำอธิบาย (ไม่บังคับ)" class="w-full px-4 py-2 mt-2 rounded-lg border resize-none theme-transition" rows="2" style="background-color: var(--bg-card); border-color: var(--border); color: var(--text-primary);"></textarea>
+                            <div id="imageDropZoneMobile" class="mt-2 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:border-blue-400 theme-transition">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <p class="text-sm text-gray-500">ลากรูปภาพมาวาง หรือคลิกเพื่อเลือก</p>
+                                <input type="file" id="imageInputMobile" accept="image/*" multiple class="hidden">
+                            </div>
+                            <div id="imagePreviewsMobile" class="mt-2 flex gap-2 flex-wrap hidden"></div>
+                        </div>
+                        <button id="addTaskBtnMobile" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 theme-transition self-start">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Desktop Add Task Bar -->
+            <div class="desktop-add-task-bar mobile-input p-4 theme-transition" style="background-color: var(--bg-secondary); border-top: 1px solid var(--border);">
                 <div class="max-w-4xl mx-auto">
                     <div class="flex gap-3">
                         <div class="flex-1">
                             <input type="text" id="taskTitleInput" placeholder="เพิ่มงานใหม่..." class="w-full px-4 py-3 rounded-lg border theme-transition" style="background-color: var(--bg-card); border-color: var(--border); color: var(--text-primary);">
                             <textarea id="taskDescInput" placeholder="คำอธิบาย (ไม่บังคับ)" class="w-full px-4 py-2 mt-2 rounded-lg border resize-none theme-transition" rows="2" style="background-color: var(--bg-card); border-color: var(--border); color: var(--text-primary);"></textarea>
-                            
-                            <!-- Image Drop Zone -->
                             <div id="imageDropZone" class="mt-2 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:border-blue-400 theme-transition">
                                 <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -183,8 +255,6 @@
                                 <p class="text-sm text-gray-500">ลากรูปภาพมาวาง หรือคลิกเพื่อเลือก</p>
                                 <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
                             </div>
-                            
-                            <!-- Image Previews -->
                             <div id="imagePreviews" class="mt-2 flex gap-2 flex-wrap hidden"></div>
                         </div>
                         <button id="addTaskBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 theme-transition self-start">
@@ -528,6 +598,12 @@
             
             sidebar.classList.toggle('open');
             overlay.classList.toggle('hidden');
+            // Show close button when sidebar is open
+            if (sidebar.classList.contains('open')) {
+                document.getElementById('mobileSidebarCloseBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('mobileSidebarCloseBtn').classList.add('hidden');
+            }
         }
 
         function closeMobileMenu() {
@@ -536,6 +612,82 @@
             
             sidebar.classList.remove('open');
             overlay.classList.add('hidden');
+            document.getElementById('mobileSidebarCloseBtn').classList.add('hidden');
+        }
+
+        // Add state for mobile add task bar
+        let mobileAddTaskBarOpen = false;
+        // Separate image state for mobile
+        let selectedImagesMobile = [];
+
+        function openMobileAddTaskBar() {
+            document.getElementById('mobileAddTaskBar').classList.add('open');
+            document.getElementById('mobileAddTaskToggle').style.display = 'none';
+            mobileAddTaskBarOpen = true;
+        }
+        function closeMobileAddTaskBar() {
+            document.getElementById('mobileAddTaskBar').classList.remove('open');
+            document.getElementById('mobileAddTaskToggle').style.display = '';
+            mobileAddTaskBarOpen = false;
+            // Clear input fields and images
+            document.getElementById('taskTitleInputMobile').value = '';
+            document.getElementById('taskDescInputMobile').value = '';
+            selectedImagesMobile = [];
+            updateImagePreviewsMobile();
+        }
+        function addTaskMobile() {
+            const titleInput = document.getElementById('taskTitleInputMobile');
+            const descInput = document.getElementById('taskDescInputMobile');
+            const title = titleInput.value.trim();
+            if (!title) return;
+            const newTask = {
+                id: Date.now().toString(),
+                title: title,
+                description: descInput.value.trim(),
+                category: currentCategory === 'ทั้งหมด' ? 'งานส่วนตัว' : currentCategory,
+                images: [...selectedImagesMobile],
+                createdAt: new Date().toISOString()
+            };
+            tasks.unshift(newTask);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            titleInput.value = '';
+            descInput.value = '';
+            selectedImagesMobile = [];
+            updateImagePreviewsMobile();
+            renderTasks();
+            closeMobileAddTaskBar();
+        }
+        function handleImageSelectMobile(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        selectedImagesMobile.push(e.target.result);
+                        updateImagePreviewsMobile();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        function updateImagePreviewsMobile() {
+            const previewsContainer = document.getElementById('imagePreviewsMobile');
+            if (selectedImagesMobile.length === 0) {
+                previewsContainer.classList.add('hidden');
+                return;
+            }
+            previewsContainer.classList.remove('hidden');
+            previewsContainer.innerHTML = selectedImagesMobile.map((img, index) => `
+                <div class="relative">
+                    <img src="${img}" alt="Preview" class="image-preview">
+                    <button onclick="removeImageMobile(${index})" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600">
+                        ×
+                    </button>
+                </div>
+            `).join('');
+        }
+        function removeImageMobile(index) {
+            selectedImagesMobile.splice(index, 1);
+            updateImagePreviewsMobile();
         }
 
         // Event listeners
@@ -599,8 +751,38 @@
             document.getElementById('fullViewOverlay').addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) closeFullView();
             });
+
+            // Mobile add task bar
+            document.getElementById('mobileAddTaskToggle').addEventListener('click', openMobileAddTaskBar);
+            document.getElementById('closeMobileAddTaskBar').addEventListener('click', closeMobileAddTaskBar);
+            document.getElementById('addTaskBtnMobile').addEventListener('click', addTaskMobile);
+            document.getElementById('taskTitleInputMobile').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    addTaskMobile();
+                }
+            });
+            // Mobile image handling
+            const imageInputMobile = document.getElementById('imageInputMobile');
+            const imageDropZoneMobile = document.getElementById('imageDropZoneMobile');
+            imageDropZoneMobile.addEventListener('click', () => imageInputMobile.click());
+            imageInputMobile.addEventListener('change', (e) => handleImageSelectMobile(e.target.files));
+            imageDropZoneMobile.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                imageDropZoneMobile.classList.add('drag-over');
+            });
+            imageDropZoneMobile.addEventListener('dragleave', () => {
+                imageDropZoneMobile.classList.remove('drag-over');
+            });
+            imageDropZoneMobile.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imageDropZoneMobile.classList.remove('drag-over');
+                handleImageSelectMobile(e.dataTransfer.files);
+            });
+
+            // Mobile sidebar close button
+            document.getElementById('mobileSidebarCloseBtn').addEventListener('click', closeMobileMenu);
         }
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96b6d222e651d53b',t:'MTc1NDU3MDIwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
 </html>
