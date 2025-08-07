@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-do List App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        .dark {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-card: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --border: #4a4a4a;
+        }
+        
+        .light {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+        }
+        
+        .theme-transition {
+            transition: all 0.3s ease;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-sizing: border-box;
+        }
+        
+        .dark .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slide-in {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .slide-in.open {
+            transform: translateX(0);
+        }
+        
+        .overlay {
+            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .dark .overlay {
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        .image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .drag-over {
+            border: 2px dashed #0078d4;
+            background-color: rgba(0, 120, 212, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-input {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 40;
+            }
+        }
+    </style>
+</head>
+<body class="light theme-transition" style="background-color: var(--bg-primary); color: var(--text-primary);">
+    <!-- Mobile Header -->
+    <div class="md:hidden flex items-center justify-between p-4" style="background-color: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+        <button id="mobileMenuBtn" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+        <h1 class="text-xl font-semibold">งานของฉัน</h1>
+        <button id="darkModeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">
+            <svg class="w-6 h-6 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+            </svg>
+            <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div id="sidebar" class="slide-in md:translate-x-0 fixed md:relative z-50 w-80 md:w-64 h-full theme-transition" style="background-color: var(--bg-secondary); border-right: 1px solid var(--border);">
+            <div class="pt-6 pb-6 px-0">
+                <div class="flex items-center justify-between mb-8 px-6">
+                    <h1 class="text-2xl font-bold text-blue-600">งานของฉัน</h1>
+                    <button id="darkModeToggleDesktop" class="hidden md:block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">
+                        <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Categories Section -->
+                <div class="rounded-xl card-shadow p-4 mb-6 w-full theme-transition" style="background-color: var(--bg-card); border: 1px solid var(--border); box-sizing: border-box;">
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="newCategoryInput" placeholder="เพิ่มหมวดหมู่ใหม่"
+                            class="flex-1 min-w-0 px-3 py-2 rounded-lg border theme-transition"
+                            style="background-color: var(--bg-card); border-color: var(--border); color: var(--text-primary); box-sizing: border-box;">
+                        <button id="addCategoryBtn"
+                            class="flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 theme-transition"
+                            style="height: 42px;">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Categories List -->
+                    <div id="categoriesList" class="space-y-2">
+                        <!-- Categories will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Overlay -->
+        <div id="mobileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Tasks Container -->
+            <div class="flex-1 p-6 pb-32 md:pb-6 overflow-y-auto">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-6">
+                        <h2 id="currentCategoryTitle" class="text-2xl font-semibold mb-2">ทั้งหมด</h2>
+                        <p id="taskCount" class="text-gray-500">0 งาน</p>
+                    </div>
+                    
+                    <div id="tasksContainer" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <!-- Tasks will be populated here -->
+                    </div>
+                    
+                    <div id="emptyState" class="text-center py-12 hidden">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium mb-2">ยังไม่มีงาน</h3>
+                        <p class="text-gray-500">เพิ่มงานใหม่เพื่อเริ่มต้น</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Task Input (Fixed at bottom on mobile) -->
+            <div class="mobile-input p-4 theme-transition" style="background-color: var(--bg-secondary); border-top: 1px solid var(--border);">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <input type="text" id="taskTitleInput" placeholder="เพิ่มงานใหม่..." class="w-full px-4 py-3 rounded-lg border theme-transition" style="background-color: var(--bg-card); border-color: var(--border); color: var(--text-primary);">
+                            <textarea id="taskDescInput" placeholder="คำอธิบาย (ไม่บังคับ)" class="w-full px-4 py-2 mt-2 rounded-lg border resize-none theme-transition" rows="2" style="background-color: var(--bg-card); border-color: var(--border); color: var(--text-primary);"></textarea>
+                            
+                            <!-- Image Drop Zone -->
+                            <div id="imageDropZone" class="mt-2 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:border-blue-400 theme-transition">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <p class="text-sm text-gray-500">ลากรูปภาพมาวาง หรือคลิกเพื่อเลือก</p>
+                                <input type="file" id="imageInput" accept="image/*" multiple class="hidden">
+                            </div>
+                            
+                            <!-- Image Previews -->
+                            <div id="imagePreviews" class="mt-2 flex gap-2 flex-wrap hidden"></div>
+                        </div>
+                        <button id="addTaskBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 theme-transition self-start">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full View Overlay -->
+    <div id="fullViewOverlay" class="fixed inset-0 z-50 hidden overlay">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="w-full max-w-4xl max-h-full overflow-y-auto rounded-xl theme-transition" style="background-color: var(--bg-card);">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 id="fullViewTitle" class="text-2xl font-semibold"></h3>
+                        <button id="closeFullView" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div id="fullViewContent">
+                        <div id="fullViewDescription" class="mb-6 text-gray-600 dark:text-gray-300"></div>
+                        
+                        <div id="fullViewImages" class="grid gap-4 md:grid-cols-2">
+                            <!-- Images will be populated here -->
+                        </div>
+                        
+                        <div class="mt-6 flex gap-3">
+                            <input type="file" id="addImageInput" accept="image/*" multiple class="hidden">
+                            <button id="addImageBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 theme-transition">
+                                เพิ่มรูปภาพ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        let categories = JSON.parse(localStorage.getItem('categories')) || ['ทั้งหมด', 'งานส่วนตัว', 'งาน'];
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentCategory = 'ทั้งหมด';
+        let currentTaskId = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTheme();
+            renderCategories();
+            renderTasks();
+            setupEventListeners();
+        });
+
+        // Theme management
+        function initializeTheme() {
+            document.body.className = `${currentTheme} theme-transition`;
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.className = `${currentTheme} theme-transition`;
+            localStorage.setItem('theme', currentTheme);
+        }
+
+        // Category management
+        function renderCategories() {
+            const categoriesList = document.getElementById('categoriesList');
+            categoriesList.innerHTML = categories.map(category => `
+                <div class="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 theme-transition ${category === currentCategory ? 'bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-600' : ''}" onclick="selectCategory('${category}')">
+                    <span class="font-medium ${category === currentCategory ? 'text-blue-600' : ''}">${category}</span>
+                    ${category !== 'ทั้งหมด' ? `<button onclick="deleteCategory('${category}')" class="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function addCategory() {
+            const input = document.getElementById('newCategoryInput');
+            const categoryName = input.value.trim();
+            
+            if (categoryName && !categories.includes(categoryName)) {
+                categories.push(categoryName);
+                localStorage.setItem('categories', JSON.stringify(categories));
+                renderCategories();
+                input.value = '';
+            }
+        }
+
+        function deleteCategory(categoryName) {
+            event.stopPropagation();
+            if (confirm(`ต้องการลบหมวดหมู่ "${categoryName}" หรือไม่?`)) {
+                categories = categories.filter(cat => cat !== categoryName);
+                tasks = tasks.filter(task => task.category !== categoryName);
+                localStorage.setItem('categories', JSON.stringify(categories));
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                
+                if (currentCategory === categoryName) {
+                    currentCategory = 'ทั้งหมด';
+                }
+                
+                renderCategories();
+                renderTasks();
+            }
+        }
+
+        function selectCategory(categoryName) {
+            currentCategory = categoryName;
+            renderCategories();
+            renderTasks();
+            closeMobileMenu();
+        }
+
+        // Task management
+        function renderTasks() {
+            const tasksContainer = document.getElementById('tasksContainer');
+            const emptyState = document.getElementById('emptyState');
+            const currentCategoryTitle = document.getElementById('currentCategoryTitle');
+            const taskCount = document.getElementById('taskCount');
+            
+            currentCategoryTitle.textContent = currentCategory;
+            
+            const filteredTasks = currentCategory === 'ทั้งหมด' 
+                ? tasks 
+                : tasks.filter(task => task.category === currentCategory);
+            
+            taskCount.textContent = `${filteredTasks.length} งาน`;
+            
+            if (filteredTasks.length === 0) {
+                tasksContainer.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            tasksContainer.innerHTML = filteredTasks.map(task => `
+                <div class="card-shadow rounded-xl p-6 theme-transition" style="background-color: var(--bg-card);">
+                    <div class="mb-4">
+                        <input type="text" value="${task.title}" onchange="updateTaskTitle('${task.id}', this.value)" class="w-full text-lg font-semibold bg-transparent border-none outline-none focus:bg-gray-50 dark:focus:bg-gray-700 rounded px-2 py-1 theme-transition" style="color: var(--text-primary);">
+                    </div>
+                    
+                    <textarea onchange="updateTaskDescription('${task.id}', this.value)" placeholder="เพิ่มคำอธิบาย..." class="w-full bg-transparent border-none outline-none resize-none focus:bg-gray-50 dark:focus:bg-gray-700 rounded px-2 py-1 theme-transition" rows="3" style="color: var(--text-secondary);">${task.description || ''}</textarea>
+                    
+                    ${task.images && task.images.length > 0 ? `
+                        <div class="mt-4 grid grid-cols-2 gap-2">
+                            ${task.images.slice(0, 4).map(img => `
+                                <img src="${img}" alt="Task image" class="image-preview cursor-pointer" onclick="openFullView('${task.id}')">
+                            `).join('')}
+                            ${task.images.length > 4 ? `<div class="image-preview bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-pointer" onclick="openFullView('${task.id}')">
+                                <span class="text-sm font-medium">+${task.images.length - 4}</span>
+                            </div>` : ''}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mt-6 flex gap-2">
+                        <button onclick="openFullView('${task.id}')" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 theme-transition">
+                            ดูงานเต็ม
+                        </button>
+                        <button onclick="deleteTask('${task.id}')" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 theme-transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addTask() {
+            const titleInput = document.getElementById('taskTitleInput');
+            const descInput = document.getElementById('taskDescInput');
+            const title = titleInput.value.trim();
+            
+            if (!title) return;
+            
+            const newTask = {
+                id: Date.now().toString(),
+                title: title,
+                description: descInput.value.trim(),
+                category: currentCategory === 'ทั้งหมด' ? 'งานส่วนตัว' : currentCategory,
+                images: [...selectedImages],
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks.unshift(newTask);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            
+            titleInput.value = '';
+            descInput.value = '';
+            clearImagePreviews();
+            renderTasks();
+        }
+
+        function updateTaskTitle(taskId, newTitle) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.title = newTitle;
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+        }
+
+        function updateTaskDescription(taskId, newDescription) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.description = newDescription;
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (confirm('ต้องการลบงานนี้หรือไม่?')) {
+                tasks = tasks.filter(task => task.id !== taskId);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                renderTasks();
+            }
+        }
+
+        // Image handling
+        let selectedImages = [];
+
+        function handleImageSelect(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        selectedImages.push(e.target.result);
+                        updateImagePreviews();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function updateImagePreviews() {
+            const previewsContainer = document.getElementById('imagePreviews');
+            
+            if (selectedImages.length === 0) {
+                previewsContainer.classList.add('hidden');
+                return;
+            }
+            
+            previewsContainer.classList.remove('hidden');
+            previewsContainer.innerHTML = selectedImages.map((img, index) => `
+                <div class="relative">
+                    <img src="${img}" alt="Preview" class="image-preview">
+                    <button onclick="removeImage(${index})" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600">
+                        ×
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            updateImagePreviews();
+        }
+
+        function clearImagePreviews() {
+            selectedImages = [];
+            updateImagePreviews();
+        }
+
+        // Full view overlay
+        function openFullView(taskId) {
+            currentTaskId = taskId;
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            document.getElementById('fullViewTitle').textContent = task.title;
+            document.getElementById('fullViewDescription').textContent = task.description || 'ไม่มีคำอธิบาย';
+            
+            const imagesContainer = document.getElementById('fullViewImages');
+            if (task.images && task.images.length > 0) {
+                imagesContainer.innerHTML = task.images.map((img, index) => `
+                    <div class="relative">
+                        <img src="${img}" alt="Task image" class="w-full h-64 object-cover rounded-lg">
+                        <button onclick="removeTaskImage('${taskId}', ${index})" class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                            ×
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                imagesContainer.innerHTML = '<p class="text-gray-500 col-span-2 text-center py-8">ยังไม่มีรูปภาพ</p>';
+            }
+            
+            document.getElementById('fullViewOverlay').classList.remove('hidden');
+        }
+
+        function closeFullView() {
+            document.getElementById('fullViewOverlay').classList.add('hidden');
+            currentTaskId = null;
+        }
+
+        function addImageToTask(files) {
+            if (!currentTaskId) return;
+            
+            const task = tasks.find(t => t.id === currentTaskId);
+            if (!task) return;
+            
+            if (!task.images) task.images = [];
+            
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        task.images.push(e.target.result);
+                        localStorage.setItem('tasks', JSON.stringify(tasks));
+                        openFullView(currentTaskId); // Refresh the view
+                        renderTasks(); // Update the main view
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function removeTaskImage(taskId, imageIndex) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task && task.images) {
+                task.images.splice(imageIndex, 1);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                openFullView(taskId); // Refresh the view
+                renderTasks(); // Update the main view
+            }
+        }
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('hidden');
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.add('hidden');
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Theme toggles
+            document.getElementById('darkModeToggle').addEventListener('click', toggleTheme);
+            document.getElementById('darkModeToggleDesktop').addEventListener('click', toggleTheme);
+            
+            // Mobile menu
+            document.getElementById('mobileMenuBtn').addEventListener('click', toggleMobileMenu);
+            document.getElementById('mobileOverlay').addEventListener('click', closeMobileMenu);
+            
+            // Category management
+            document.getElementById('addCategoryBtn').addEventListener('click', addCategory);
+            document.getElementById('newCategoryInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addCategory();
+            });
+            
+            // Task management
+            document.getElementById('addTaskBtn').addEventListener('click', addTask);
+            document.getElementById('taskTitleInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    addTask();
+                }
+            });
+            
+            // Image handling
+            const imageInput = document.getElementById('imageInput');
+            const imageDropZone = document.getElementById('imageDropZone');
+            
+            imageDropZone.addEventListener('click', () => imageInput.click());
+            imageInput.addEventListener('change', (e) => handleImageSelect(e.target.files));
+            
+            // Drag and drop
+            imageDropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                imageDropZone.classList.add('drag-over');
+            });
+            
+            imageDropZone.addEventListener('dragleave', () => {
+                imageDropZone.classList.remove('drag-over');
+            });
+            
+            imageDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imageDropZone.classList.remove('drag-over');
+                handleImageSelect(e.dataTransfer.files);
+            });
+            
+            // Full view
+            document.getElementById('closeFullView').addEventListener('click', closeFullView);
+            document.getElementById('addImageBtn').addEventListener('click', () => {
+                document.getElementById('addImageInput').click();
+            });
+            document.getElementById('addImageInput').addEventListener('change', (e) => {
+                addImageToTask(e.target.files);
+            });
+            
+            // Close full view on overlay click
+            document.getElementById('fullViewOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeFullView();
+            });
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96b6d222e651d53b',t:'MTc1NDU3MDIwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
+</html>
